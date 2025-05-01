@@ -1,0 +1,85 @@
+COMPUTER ORGANIZATION AND DESIGN
+The Hardware/Software Interface
+HW #1
+Inter Process Communication
+Yunmin Go
+School of CSEE 
+Requirement
+◼ Implement a pipe-based word search program
+◼ You can imagine the result of ‘cat news.txt | grep -n korea’ on Linux.
+◼ Required programming skills
+◼ Command line argument
+◼ Multi-process programming
+◼ IPC programming with ordinary pipe
+Homework #1 - 2
+Requirements
+◼ Program should follow usage below
+◼ You must use ordinary pipe for communication between parent
+process and child process.
+◼ The child process executes the command user entered.
+◼ The parent process finds the user requested search word from the
+output of the command executed by child process.
+◼ To read the output of the command at parent process, you need to
+use ‘dup2()’. This function can be used to redirect the stdout to pipe.
+◼ https://man7.org/linux/man-pages/man2/dup.2.html
+Homework #1 - 3
+$ ./wspipe <command> <search word>
+* Program name is ‘wspipe’
+* Your command must print out some
+results to display
+* Search word is case-sensitive
+Requirements
+◼ Search word is case-sensitive.
+◼ Your program should print out the line number and highlight the
+search word as shown in the next page.
+◼ To change font color in printf(), please refer to link below.
+◼ https://c-for-dummies.com/blog/?p=5270
+◼ Do not use the function popen(), system(), and string functions like
+strcpy(), strcmp(), strstr(), except for strlen().
+◼ If you need string functions like strcpy(), strcmp(), strstr(), you have to
+manually implement your own versions in your code.
+Homework #1 - 4
+Requirements
+◼ Expected results
+Homework #1 - 5
+Just for comparison of our results.
+Command Search word
+Requirements
+◼ Another expected results
+Homework #1 - 6
+Command Just for comparison of our results.
+Search word
+The results may differ on your computer. 
+Requirements
+◼ Add your own service to your program with creative thinking.
+◼ Among 5 points of this homework, 1 point is for creative service. We evaluate
+the novelty and difficulty level of your service.
+◼ One creative service is enough. You don’t need to implement more than one.
+◼ You must submit a README file (text file) which explains about your service,
+including purpose and usage, etc.
+◼ You are allowed to use external library in your program. However, if you do,
+you must clearly explain in your README file how to install external libraries.
+◼ You can also add option to run your service when the program is executed.
+◼ Your program must be compiled by Makefile.
+◼ https://makefiletutorial.com/
+Homework #1 - 7
+Requirements
+◼ Your program must be compiled and executed on Ubuntu 24.04LTS.
+◼ If not, you will get penalty points.
+◼ Write clean source code
+◼ Add proper comment in your source code
+◼ Consider code indentation for enhancing readability.
+◼ Upload ZIP file on LMS by compressing all your source codes and
+files (README and Makefile).
+◼ File name: hw1_student id.zip (ex: hw1_20400022.zip)
+◼ Due date: 11:59pm, 5/2 (Fri)
+Homework #1 - 8
+Important Notes
+◼ We must adhere to the Handong Honor Code.
+◼ If you are caught cheating on any assignment, you will receive a score of
+0 for all of your assignments, regardless of the points you've earned on
+other assignments.
+◼ Both the person who provides the code and the one who copies it will
+receive a score of zero.
+◼ Questions related to this homework may appear on the quiz.
+Homework #1 - 9
