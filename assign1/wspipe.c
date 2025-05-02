@@ -50,13 +50,27 @@ void highlight_word(const char *line, const char *word) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 3) {
-        fprintf(stderr, "Usage: %s \"<command>\" <search_word>\n", argv[0]);
+    char *command = NULL;
+    char *search = NULL;
+    int use_range = 0;
+    int start_line = 0, end_line = 0;
+
+    // 🔧 기능 추가: --line-range start end 옵션 지원
+    if (argc == 6 && strcmp(argv[1], "--line-range") == 0) {
+        use_range = 1;
+        start_line = atoi(argv[2]);
+        end_line = atoi(argv[3]);
+        command = argv[4];
+        search = argv[5];
+    } else if (argc == 3) {
+        command = argv[1];
+        search = argv[2];
+    } else {
+        fprintf(stderr, "Usage:\n");
+        fprintf(stderr, "  %s \"<command>\" <search_word>\n", argv[0]);
+        fprintf(stderr, "  %s --line-range <start> <end> \"<command>\" <search_word>\n", argv[0]);
         exit(1);
     }
-
-    char *command = argv[1];
-    char *search = argv[2];
 
     int fd[2];
     if (pipe(fd) == -1) {
@@ -104,9 +118,12 @@ int main(int argc, char *argv[]) {
         char line[MAX_LINE];
         int lineno = 1;
         while (fgets(line, sizeof(line), fp)) {
-            if (my_strstr(line, search)) {
-                printf("%d: ", lineno);
-                highlight_word(line, search);
+            // ✅ 추가된 기능: 줄 범위 내일 경우만 출력
+            if (!use_range || (lineno >= start_line && lineno <= end_line)) {
+                if (my_strstr(line, search)) {
+                    printf("%d: ", lineno);
+                    highlight_word(line, search);
+                }
             }
             lineno++;
         }
