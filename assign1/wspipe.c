@@ -13,11 +13,20 @@ int my_strlen(const char *s) {
     return len;
 }
 
-// strstr 구현 (포인터 반환)
+// 문자열 비교
+int my_strcmp(const char *s1, const char *s2) {
+    while (*s1 && *s2) {
+        if (*s1 != *s2) return (*s1 - *s2);
+        s1++;
+        s2++;
+    }
+    return *s1 - *s2;
+}
+
+// strstr 구현
 char *my_strstr(const char *haystack, const char *needle) {
     int hlen = my_strlen(haystack);
     int nlen = my_strlen(needle);
-
     if (nlen == 0) return (char *)haystack;
 
     for (int i = 0; i <= hlen - nlen; i++) {
@@ -33,7 +42,30 @@ char *my_strstr(const char *haystack, const char *needle) {
     return NULL;
 }
 
-// ANSI 빨간색 강조
+// strtok 간단 구현 (공백만 기준)
+char *my_strtok(char *str, const char *delim) {
+    static char *next;
+    if (str) next = str;
+
+    if (!next) return NULL;
+
+    while (*next && strchr(delim, *next)) next++; // skip leading delimiters
+    if (*next == '\0') return NULL;
+
+    char *start = next;
+    while (*next && !strchr(delim, *next)) next++;
+
+    if (*next) {
+        *next = '\0';
+        next++;
+    } else {
+        next = NULL;
+    }
+
+    return start;
+}
+
+// ANSI 강조 출력
 void highlight_word(const char *line, const char *word) {
     const char *pos = line;
     int word_len = my_strlen(word);
@@ -55,8 +87,7 @@ int main(int argc, char *argv[]) {
     int use_range = 0;
     int start_line = 0, end_line = 0;
 
-    // 🔧 기능 추가: --line-range start end 옵션 지원
-    if (argc == 6 && strcmp(argv[1], "--line-range") == 0) {
+    if (argc == 6 && my_strcmp(argv[1], "--line-range") == 0) {
         use_range = 1;
         start_line = atoi(argv[2]);
         end_line = atoi(argv[3]);
@@ -86,18 +117,16 @@ int main(int argc, char *argv[]) {
     }
 
     else if (pid == 0) {
-        // 자식
-        close(fd[0]); // 읽기 닫음
-        dup2(fd[1], STDOUT_FILENO); // stdout을 파이프로 연결
+        close(fd[0]);
+        dup2(fd[1], STDOUT_FILENO);
         close(fd[1]);
 
-        // command split
         char *args[64];
         int i = 0;
-        char *token = strtok(command, " ");
+        char *token = my_strtok(command, " ");
         while (token != NULL) {
             args[i++] = token;
-            token = strtok(NULL, " ");
+            token = my_strtok(NULL, " ");
         }
         args[i] = NULL;
 
@@ -107,8 +136,7 @@ int main(int argc, char *argv[]) {
     }
 
     else {
-        // 부모
-        close(fd[1]); // 쓰기 닫음
+        close(fd[1]);
         FILE *fp = fdopen(fd[0], "r");
         if (!fp) {
             perror("fdopen");
@@ -118,7 +146,6 @@ int main(int argc, char *argv[]) {
         char line[MAX_LINE];
         int lineno = 1;
         while (fgets(line, sizeof(line), fp)) {
-            // ✅ 추가된 기능: 줄 범위 내일 경우만 출력
             if (!use_range || (lineno >= start_line && lineno <= end_line)) {
                 if (my_strstr(line, search)) {
                     printf("%d: ", lineno);
@@ -129,7 +156,7 @@ int main(int argc, char *argv[]) {
         }
 
         fclose(fp);
-        wait(NULL); // 자식 종료 대기
+        wait(NULL);
     }
 
     return 0;
