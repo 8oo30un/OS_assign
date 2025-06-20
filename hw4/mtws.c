@@ -27,16 +27,16 @@ typedef struct {
     int index;
 } thread_arg_t;
 
-bounded_buffer_t buffer;
+bounded_buffer_t job_queue;
 
-char search_word[256];
-int total_found = 0;
-pthread_mutex_t total_mutex = PTHREAD_MUTEX_INITIALIZER;
+char keyword[256];
+int matches_total = 0;
+pthread_mutex_t matches_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-int done = 0;
+int scan_complete = 0;
 
-int total_files = 0;
-pthread_mutex_t file_count_mutex = PTHREAD_MUTEX_INITIALIZER;
+int files_scanned = 0;
+pthread_mutex_t files_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 //  문자열 함수 
 int case_insensitive_search(const char* line, const char* word) {
@@ -81,10 +81,10 @@ void buffer_push(bounded_buffer_t* b, char* item) {
 
 char* buffer_pop(bounded_buffer_t* b) {
     pthread_mutex_lock(&b->mutex);
-    while (b->count == 0 && !done) {
+    while (b->count == 0 && !scan_complete) {
         pthread_cond_wait(&b->not_empty, &b->mutex);
     }
-    if (b->count == 0 && done) {
+    if (b->count == 0 && scan_complete) {
         pthread_mutex_unlock(&b->mutex);
         return NULL;
     }
@@ -104,14 +104,14 @@ void file_searcher(char* path, int thread_index, int file_index) {
     char line[4096];
     int count = 0;
     while (fgets(line, sizeof(line), file)) {
-        count += case_insensitive_search(line, search_word);
+        count += case_insensitive_search(line, keyword);
     }
     fclose(file);
 
     printf("[Thread#%d-%d] %s: %d found\n", thread_index, file_index, path, count);
-    pthread_mutex_lock(&total_mutex);
-    total_found += count;
-    pthread_mutex_unlock(&total_mutex);
+    pthread_mutex_lock(&matches_mutex);
+    matches_total += count;
+    pthread_mutex_unlock(&matches_mutex);
     free(path);
 }
 
@@ -135,10 +135,10 @@ void search_directory(const char* dirname) {
             search_directory(path);
         } else if (S_ISREG(st.st_mode)) {
             char* filepath = strdup(path);
-            buffer_push(&buffer, filepath);
-            pthread_mutex_lock(&file_count_mutex);
-            total_files++;
-            pthread_mutex_unlock(&file_count_mutex);
+            buffer_push(&job_queue, filepath);
+            pthread_mutex_lock(&files_mutex);
+            files_scanned++;
+            pthread_mutex_unlock(&files_mutex);
         }
     }
     closedir(dir);
@@ -148,10 +148,10 @@ void search_directory(const char* dirname) {
 void* worker_thread(void* arg) {
     thread_arg_t* t_arg = (thread_arg_t*)arg;
     int thread_index = t_arg->index;
-    printf("[Thread#%d] started searching '%s'...\n", thread_index, search_word);
+    printf("[Thread#%d] started searching '%s'...\n", thread_index, keyword);
     int file_index = 0;
     while (1) {
-        char* path = buffer_pop(&buffer);
+        char* path = buffer_pop(&job_queue);
         if (!path) break;
         file_searcher(path, thread_index, file_index);
         file_index++;
@@ -186,8 +186,8 @@ int main(int argc, char* argv[]) {
 
     printf("Buffer size=%d, Num threads=%d, Directory=%s, Searchword=%s\n", b, t, d, w);
 
-    strncpy(search_word, w, sizeof(search_word));
-    buffer_init(&buffer, b);
+    strncpy(keyword, w, sizeof(keyword));
+    buffer_init(&job_queue, b);
 
     pthread_t threads[t];
     for (int i = 0; i < t; i++) {
@@ -198,15 +198,15 @@ int main(int argc, char* argv[]) {
 
     search_directory(d);
 
-    pthread_mutex_lock(&buffer.mutex);
-    done = 1;
-    pthread_cond_broadcast(&buffer.not_empty);
-    pthread_mutex_unlock(&buffer.mutex);
+    pthread_mutex_lock(&job_queue.mutex);
+    scan_complete = 1;
+    pthread_cond_broadcast(&job_queue.not_empty);
+    pthread_mutex_unlock(&job_queue.mutex);
 
     for (int i = 0; i < t; i++) {
         pthread_join(threads[i], NULL);
     }
 
-    printf("Total found = %d (Num files=%d)\n", total_found, total_files);
+    printf("Total found = %d (Num files=%d)\n", matches_total, files_scanned);
     return 0;
 }
