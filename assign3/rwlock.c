@@ -9,12 +9,12 @@
 #define MAX_THREADS 100
 
 typedef struct {
-    sem_t mutex;          // protects readCount and waitingWriters
-    sem_t queue;          // serialize all threads to maintain FIFO order
-    sem_t writeLock;      // exclusive write lock
-    sem_t readTry;        // block readers when writers are waiting
-    int readCount;        // number of active readers
-    int waitingWriters;   // number of waiting writers
+    sem_t mutex;          
+    sem_t queue;          
+    sem_t writeLock;   
+    sem_t readTry;   
+    int readCount;      
+    int waitingWriters;   
 } rwlock_t;
 
 void rwlock_init(rwlock_t *rw) {
@@ -27,7 +27,7 @@ void rwlock_init(rwlock_t *rw) {
 }
 
 void rwlock_acquire_readlock(rwlock_t *rw) {
-    sem_wait(&rw->queue);      // Reader holds queue until finished
+    sem_wait(&rw->queue);      
     sem_wait(&rw->readTry);
     sem_wait(&rw->mutex);
     rw->readCount++;
@@ -35,7 +35,7 @@ void rwlock_acquire_readlock(rwlock_t *rw) {
         sem_wait(&rw->writeLock);
     sem_post(&rw->mutex);
     sem_post(&rw->readTry);
-    // Do not release queue here
+
 }
 
 void rwlock_release_readlock(rwlock_t *rw) {
@@ -43,7 +43,7 @@ void rwlock_release_readlock(rwlock_t *rw) {
     rw->readCount--;
     if (rw->readCount == 0) {
         sem_post(&rw->writeLock);
-        sem_post(&rw->queue);  // Last reader releases queue
+        sem_post(&rw->queue); 
     }
     sem_post(&rw->mutex);
 }
@@ -68,7 +68,7 @@ void rwlock_release_writelock(rwlock_t *rw) {
     sem_post(&rw->queue);
 }
 
-// Utility to get timestamp in milliseconds for logging
+
 long long get_timestamp_ms() {
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
             arg->id = wid++;
             pthread_create(&threads[tcnt++], NULL, writer, arg);
         }
-        usleep(100 * 1000); // 100ms delay
+        usleep(100 * 1000); 
     }
 
     fclose(fp);

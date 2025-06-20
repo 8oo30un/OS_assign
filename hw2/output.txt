@@ -1,0 +1,2 @@
+Writer 3 processed for 500 ms
+Writer 8 processed for 400 ms
